@@ -50,6 +50,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(sw)
 
+set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+find_package(OpenSSL REQUIRED)
+
 set(LIBHV_STATIC_LIB ON CACHE BOOL "Build libhv as a static library" FORCE)
 FetchContent_Declare(
   libhv
@@ -59,7 +63,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(libhv)
 
-set(SOURCES "src/main.cpp")
+set(SOURCES 
+    "src/main.cpp"
+    "src/views/home.h"
+    "src/views/home.cpp"
+    "src/utils/utils.h"
+    "src/utils/utils.cpp"
+)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug") 
     add_executable(${PROJECT_NAME} ${SOURCES})
@@ -79,5 +89,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     argparse
     nlohmann_json::nlohmann_json
     sw
+    OpenSSL::SSL
+    OpenSSL::Crypto
     hv
 )
