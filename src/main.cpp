@@ -16,6 +16,8 @@ int main(int argc, char *argv[])
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLine, int nCmdShow)
 #endif
 {
+    setlocale(LC_ALL, "chs");
+    SetConsoleOutputCP(CP_UTF8);
     create_dir_if_not_exists(L"update");
     plog::init(plog::debug, "update/update.log");
     PLOGI << "start program.";

@@ -69,6 +69,8 @@ set(SOURCES
     "src/views/home.cpp"
     "src/utils/utils.h"
     "src/utils/utils.cpp"
+    "src/request/request.h"
+    "src/request/request.cpp"
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug") 
@@ -91,5 +93,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     sw
     OpenSSL::SSL
     OpenSSL::Crypto
-    hv
+    hv_static
 )
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE HV_STATICLIB)

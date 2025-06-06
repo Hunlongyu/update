@@ -1,4 +1,5 @@
 #include "home.h"
+#include "src/request/request.h"
 
 Home::Home()
 {
@@ -91,10 +92,6 @@ void Home::initUI()
 
 void Home::renderLogs()
 {
-    for (auto i = 0; i < 20; ++i)
-    {
-        m_update_logs->AddItem(L"la la la la la la la la");
-    }
 }
 
 void Home::listItemClick()
@@ -117,6 +114,8 @@ void Home::btnUpdateClicked()
 {
     m_btn_update->Enabled = false;
     std::cout << "update clicked" << std::endl;
+    getLatestRelease();
+    m_btn_update->Enabled = true;
 }
 
 void Home::btnCancelClicked()
@@ -124,4 +123,69 @@ void Home::btnCancelClicked()
     m_btn_cancel->Enabled = false;
     std::cout << "cancel clicked" << std::endl;
     sw::App::QuitMsgLoop(0);
+}
+
+void Home::getLatestRelease()
+{
+    std::thread([this]() {
+        auto req = std::make_shared<ClientRequest>();
+        const auto resp = req->getLatestRelease("https://github.com/Hunlongyu/ReadMe");
+
+        if (resp.tag_name.empty())
+        {
+            return;
+        }
+        // TODO 这里更新界面UI
+        /*if (resp.tag_name.empty())
+        {
+            return;
+        }
+        m_latest_version->Text = L"最新版本：" + sw::Utils::ToWideStr(resp.tag_name, true);
+        if (resp.body.empty())
+        {
+            m_update_logs->Clear();
+            m_update_logs->AddItem(L"无更新日志");
+            return;
+        }
+
+        const auto list = parserLogs(resp.body);
+        for (auto log : list)
+        {
+            m_update_logs->AddItem(log);
+        }*/
+
+    }).detach();
+}
+
+std::vector<std::wstring> Home::parserLogs(const std::string &log)
+{
+    std::vector<std::wstring> result;
+
+    std::string new_log = log;
+    size_t pos = 0;
+    while ((pos = new_log.find("\r\n", pos)) != std::string::npos)
+    {
+        new_log.replace(pos, 2, "\n");
+        ++pos;
+    }
+
+    // 2. 拆分每一行
+    std::istringstream iss(new_log);
+    std::string line;
+
+    while (std::getline(iss, line, '\n'))
+    {
+        // 3. 跳过包含“更新日志”的行
+        if (line.find("更新日志") != std::string::npos)
+            continue;
+        // 4. 去除左右空白
+        line.erase(0, line.find_first_not_of(" \t"));
+        line.erase(line.find_last_not_of(" \t") + 1);
+        if (line.empty())
+            continue;
+        // 5. 转为wstring
+        const auto ws = sw::Utils::ToWideStr(line, true);
+        result.push_back(ws);
+    }
+    return result;
 }

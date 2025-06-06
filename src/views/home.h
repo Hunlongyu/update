@@ -1,5 +1,5 @@
 #pragma once
-
+#define _WINSOCKAPI_
 #include <SimpleWindow.h>
 
 class Home : public sw::Window
@@ -35,4 +35,8 @@ class Home : public sw::Window
     void btnUpdateClicked(); // 更新按钮点击事件
 
     void btnCancelClicked(); // 取消按钮点击事件
+
+    void getLatestRelease(); // 获取最新的版本
+
+    static std::vector<std::wstring> parserLogs(const std::string &log); // 解析日志
 };
