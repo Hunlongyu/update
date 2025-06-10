@@ -1,5 +1,7 @@
 #include "home.h"
 
+#include <filesystem>
+
 Home::Home()
 {
     initUI();
@@ -37,11 +39,11 @@ void Home::initUI()
     m_grid->AddChild(m_stack_panel, sw::GridLayoutTag{0, 0});
 
     m_current_version = new sw::Label();
-    m_current_version->Text = L"当前版本：v1.0.1";
+    m_current_version->Text = L"当前版本：";
     m_stack_panel->AddChild(m_current_version);
 
     m_latest_version = new sw::Label();
-    m_latest_version->Text = L"最新版本：v2.0.0";
+    m_latest_version->Text = L"最新版本：";
     m_latest_version->Margin = sw::Thickness{40, 0, 0, 0};
     m_stack_panel->AddChild(m_latest_version);
 
@@ -90,11 +92,7 @@ void Home::initUI()
     m_btns_grid->AddChild(m_btn_cancel, sw::GridLayoutTag{0, 2});
 }
 
-void Home::renderLogs()
-{
-}
-
-void Home::listItemClick()
+void Home::listItemClick() const
 {
     const auto idx = m_update_logs->SelectedIndex.Get();
     if (idx == -1)
@@ -115,13 +113,14 @@ void Home::btnUpdateClicked()
 {
     m_btn_check->Enabled = false;
     m_btn_update->Enabled = false;
+    m_progress_bar->Value = 0;
     downloadRelease();
 }
 
 void Home::btnCancelClicked() const
 {
     m_req->cancelDownload();
-    // sw::App::QuitMsgLoop(0);
+    sw::App::QuitMsgLoop(0);
 }
 
 void Home::getLatestRelease()
@@ -158,6 +157,10 @@ void Home::downloadRelease()
     std::thread([this]() {
         const auto asset = parserDownloadAsset(m_release, true, false);
         int res = m_req->downloadAsset(asset, [this](size_t downloaded, size_t total) {
+            if (total == 0)
+            {
+                return;
+            }
             const auto percent = static_cast<uint16_t>(downloaded * 100 / total);
             Invoke([this, percent]() { m_progress_bar->Value = percent; });
         });
@@ -165,6 +168,7 @@ void Home::downloadRelease()
         m_btn_check->Enabled = true;
         if (res == 0)
         {
+            Invoke([this, asset] { processSoftware(asset); });
         }
     }).detach();
 }
@@ -248,4 +252,31 @@ Asset Home::parserDownloadAsset(const Release &release, bool x64, bool setup)
         }
     }
     return best ? *best : Asset{};
+}
+
+void Home::processSoftware(const Asset &asset)
+{
+    const auto file = "update/" + asset.name;
+    if (!std::filesystem::exists(file))
+    {
+        return;
+    }
+    try
+    {
+        STARTUPINFOW si = {sizeof(si)};
+        PROCESS_INFORMATION pi;
+        const auto wFile = sw::Utils::ToWideStr(file);
+        std::wstring cmdLine = L"\"" + wFile + L"\"";
+        if (!CreateProcessW(nullptr, cmdLine.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi))
+        {
+            throw std::runtime_error("启动程序失败，错误代码: " + std::to_string(GetLastError()));
+        }
+        // 关闭句柄
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        sw::App::QuitMsgLoop(0);
+    }
+    catch (...)
+    {
+    }
 }

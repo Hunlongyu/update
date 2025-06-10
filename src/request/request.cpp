@@ -136,8 +136,9 @@ int ClientRequest::downloadAsset(const Asset &asset, std::function<void(size_t d
     req.method = HTTP_GET;
     size_t downloaded = 0;
     req.http_cb = [this, &file, &downloaded, &content_length, &progress_cb](HttpMessage *resp, http_parser_state state, const char *data, size_t size) {
-        if (state == HP_BODY)
+        switch (state)
         {
+        case HP_BODY:
             if (cancel_flag)
             {
                 return -1;
@@ -151,6 +152,10 @@ int ClientRequest::downloadAsset(const Asset &asset, std::function<void(size_t d
                     progress_cb(downloaded, content_length);
                 }
             }
+            return 0;
+
+        default:
+            return 0;
         }
     };
 

@@ -31,9 +31,7 @@ class Home : public sw::Window
 
     void initUI(); // 初始化UI
 
-    void renderLogs(); // 渲染日志
-
-    void listItemClick();
+    void listItemClick() const;
 
     void btnCheckClicked(); // 忽略按钮点击事件
 
@@ -48,4 +46,6 @@ class Home : public sw::Window
     static std::vector<std::wstring> parserLogs(const std::string &log); // 解析日志
 
     static Asset parserDownloadAsset(const Release &release, bool x64, bool setup); // 解析下载地址
+
+    static void processSoftware(const Asset& asset);
 };
