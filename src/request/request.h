@@ -29,17 +29,8 @@ class ClientRequest
     // 获取最新的一个 release
     static Release getLatestRelease(const std::string &url);
 
-    // 获取最新的一个 release 异步方式
-    std::string getLatestReleaseAsync(const std::string &url);
-
-    // 获取所有 release
-    std::vector<Release> getReleases(const std::string &url);
-
-    // 获取所有 release 异步方式
-    std::vector<Release> getReleasesAsync(const std::string &url);
-
     // 下载资源 并显示进度
-    void downloadAsset(Asset asset, std::function<void(size_t downloaded, size_t total)> progress_cb);
+    int downloadAsset(const Asset &asset, std::function<void(size_t downloaded, size_t total)> progress_cb);
 
     // 取消下载
     void cancelDownload();

@@ -2,6 +2,8 @@
 #define _WINSOCKAPI_
 #include <SimpleWindow.h>
 
+#include "src/request/request.h"
+
 class Home : public sw::Window
 {
   public:
@@ -20,9 +22,12 @@ class Home : public sw::Window
     sw::ListBox *m_update_logs{nullptr};      // 更新日志
     sw::ProgressBar *m_progress_bar{nullptr}; // 进度条
     sw::Grid *m_btns_grid{nullptr};           // 按钮组
-    sw::Button *m_btn_ignore{nullptr};        // 忽略按钮
+    sw::Button *m_btn_check{nullptr};        // 忽略按钮
     sw::Button *m_btn_update{nullptr};        // 更新按钮
     sw::Button *m_btn_cancel{nullptr};        // 取消按钮
+
+    Release m_release; // 资源信息
+    std::shared_ptr<ClientRequest> m_req;
 
     void initUI(); // 初始化UI
 
@@ -30,13 +35,17 @@ class Home : public sw::Window
 
     void listItemClick();
 
-    void btnIgnoreClicked(); // 忽略按钮点击事件
+    void btnCheckClicked(); // 忽略按钮点击事件
 
     void btnUpdateClicked(); // 更新按钮点击事件
 
-    void btnCancelClicked(); // 取消按钮点击事件
+    void btnCancelClicked() const; // 取消按钮点击事件
 
     void getLatestRelease(); // 获取最新的版本
 
+    void downloadRelease(); // 下载更新
+
     static std::vector<std::wstring> parserLogs(const std::string &log); // 解析日志
+
+    static Asset parserDownloadAsset(const Release &release, bool x64, bool setup); // 解析下载地址
 };

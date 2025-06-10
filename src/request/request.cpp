@@ -1,4 +1,5 @@
 #include "request.h"
+#include "hv/HttpClient.h"
 #include "hv/hlog.h"
 #include "nlohmann/json.hpp"
 #include <fstream>
@@ -47,11 +48,6 @@ Release ClientRequest::getLatestRelease(const std::string &url)
     return releases[0];
 }
 
-std::vector<Release> ClientRequest::getReleases(const std::string &url)
-{
-    return std::vector<Release>();
-}
-
 std::vector<Release> ClientRequest::parseReleases(const std::string &releases)
 {
     std::vector<Release> result;
@@ -91,14 +87,90 @@ std::vector<Release> ClientRequest::parseReleases(const std::string &releases)
     return result;
 }
 
-void ClientRequest::downloadAsset(Asset asset, std::function<void(size_t downloaded, size_t total)> progress_cb)
+int ClientRequest::downloadAsset(const Asset &asset, std::function<void(size_t downloaded, size_t total)> progress_cb)
 {
-    return;
+    using namespace hv;
+    cancel_flag = false;
+    std::string url = asset.browser_download_url;
+    if (url.empty())
+    {
+        return -1;
+    }
+    std::string filename = asset.name;
+    if (filename.empty())
+    {
+        return -1;
+    }
+
+    std::string download_dir = "update/";
+    std::string filepath_download = download_dir + filename + ".download";
+    std::string filepath_final = download_dir + filename;
+    _mkdir(download_dir.c_str());
+
+    HttpClient cli;
+    HttpRequest req;
+    HttpResponse resp;
+
+    req.method = HTTP_HEAD;
+    req.url = url;
+    req.timeout = 3600;
+    int ret = cli.send(&req, &resp);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    size_t content_length = resp.content_length;
+    if (content_length == 0)
+    {
+        content_length = asset.size;
+    }
+
+    HFile file;
+    ret = file.open(filepath_download.c_str(), "wb");
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    req.method = HTTP_GET;
+    size_t downloaded = 0;
+    req.http_cb = [this, &file, &downloaded, &content_length, &progress_cb](HttpMessage *resp, http_parser_state state, const char *data, size_t size) {
+        if (state == HP_BODY)
+        {
+            if (cancel_flag)
+            {
+                return -1;
+            }
+            if (data && size)
+            {
+                file.write(data, size);
+                downloaded += size;
+                if (progress_cb)
+                {
+                    progress_cb(downloaded, content_length);
+                }
+            }
+        }
+    };
+
+    ret = cli.send(&req, &resp);
+    file.close();
+
+    if (ret == 0)
+    {
+        file.rename(filepath_final.c_str());
+    }
+    else
+    {
+        file.remove();
+    }
+    return ret;
 }
 
 void ClientRequest::cancelDownload()
 {
-    return;
+    cancel_flag = true;
 }
 
 std::string ClientRequest::urlConvert(const std::string &url)
