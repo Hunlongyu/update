@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(update LANGUAGES CXX)
+project(updater LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -71,7 +71,11 @@ set(SOURCES
     "src/utils/utils.cpp"
     "src/request/request.h"
     "src/request/request.cpp"
+    "resources/resource.rc"
 )
+
+enable_language(RC)
+set(CMAKE_RC_COMPILER_INIT windres)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug") 
     add_executable(${PROJECT_NAME} ${SOURCES})
