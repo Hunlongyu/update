@@ -102,7 +102,7 @@ int ClientRequest::downloadAsset(const Asset &asset, std::function<void(size_t d
         return -1;
     }
 
-    std::string download_dir = "update/";
+    std::string download_dir = "updater/";
     std::string filepath_download = download_dir + filename + ".download";
     std::string filepath_final = download_dir + filename;
     _mkdir(download_dir.c_str());

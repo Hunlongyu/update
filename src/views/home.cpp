@@ -1,12 +1,15 @@
 #include "home.h"
-
+#include "plog/Log.h"
 #include <filesystem>
 
-Home::Home()
+#include <semver.hpp>
+
+Home::Home(const Args &args) : m_args(args)
 {
     initUI();
     m_req = std::make_shared<ClientRequest>();
     getLatestRelease();
+    checkVersion();
 }
 
 Home::~Home()
@@ -39,7 +42,7 @@ void Home::initUI()
     m_grid->AddChild(m_stack_panel, sw::GridLayoutTag{0, 0});
 
     m_current_version = new sw::Label();
-    m_current_version->Text = L"当前版本：";
+    m_current_version->Text = L"当前版本：" + sw::Utils::ToWideStr(m_args.version, true);
     m_stack_panel->AddChild(m_current_version);
 
     m_latest_version = new sw::Label();
@@ -79,6 +82,7 @@ void Home::initUI()
     m_btn_check->RegisterRoutedEvent(sw::ButtonBase_Clicked, [this](sw::UIElement &sender, sw::RoutedEventArgs &e) { btnCheckClicked(); });
 
     m_btn_update = new sw::Button();
+    m_btn_update->Enabled = false;
     m_btn_update->Text = L"更新";
     m_btn_update->RegisterRoutedEvent(sw::ButtonBase_Clicked, [this](sw::UIElement &sender, sw::RoutedEventArgs &e) { btnUpdateClicked(); });
 
@@ -126,7 +130,7 @@ void Home::btnCancelClicked() const
 void Home::getLatestRelease()
 {
     std::thread([this]() {
-        const auto resp = m_req->getLatestRelease("https://github.com/Hunlongyu/resting-screen");
+        const auto resp = m_req->getLatestRelease(m_args.url);
         m_release = resp;
 
         sw::WndBase::Invoke([this, resp]() {
@@ -150,6 +154,25 @@ void Home::getLatestRelease()
             }
         });
     }).detach();
+}
+
+void Home::checkVersion() const
+{
+    try
+    {
+        semver::version cv;
+        semver::parse(m_args.version, cv);
+        semver::version lv;
+        semver::parse(m_release.tag_name, lv);
+        if (cv < lv)
+        {
+            m_btn_update->Enabled = true;
+        }
+    }
+    catch (const std::exception &err)
+    {
+        PLOGE << err.what();
+    }
 }
 
 void Home::downloadRelease()
@@ -256,7 +279,7 @@ Asset Home::parserDownloadAsset(const Release &release, bool x64, bool setup)
 
 void Home::processSoftware(const Asset &asset)
 {
-    const auto file = "update/" + asset.name;
+    const auto file = "updater/" + asset.name;
     if (!std::filesystem::exists(file))
     {
         return;

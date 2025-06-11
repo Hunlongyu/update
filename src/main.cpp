@@ -1,14 +1,8 @@
+#include "utils/utils.h"
+#include "views/home.h"
+#include <argparse/argparse.hpp>
 #include <plog/Initializers/RollingFileInitializer.h>
 #include <plog/Log.h>
-//#include <plog/Logger.h>
-
-#include <argparse/argparse.hpp>
-#include <semver/semver.hpp>
-
-#include <nlohmann/json.hpp>
-
-#include "views/home.h"
-#include "utils/utils.h"
 
 #ifdef _DEBUG
 int main(int argc, char *argv[])
@@ -18,32 +12,53 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLin
 {
     setlocale(LC_ALL, "chs");
     SetConsoleOutputCP(CP_UTF8);
-    create_dir_if_not_exists(L"update");
-    plog::init(plog::debug, "update/update.log");
+    _mkdir("updater");
+    plog::init(plog::debug, "updater/updater.log");
     PLOGI << "start program.";
 
-    Home home;
-    home.Show();
-
-    auto ver = semver::version(0, 0, 1);
-    PLOGI << "version: " << ver.str();
-
-    //argparse::ArgumentParser program("update");
-    //program.add_argument("-v", "--version").help("print version").default_value(false).implicit_value(true);
-
-    //program.parse_args(argc, argv);
-
-    /*if (program["-v"] == true)
+    Args m_args;
+    try
     {
-        std::cout << ver.str() << std::endl;
-    }*/
+        argparse::ArgumentParser program("updater");
+        program.add_argument("-v", "--version").required().help("current program version.");
+        program.add_argument("-u", "--url").required().help("github repo url.");
+        program.add_argument("-n", "--name").required().help("current program name.");
+        program.add_argument("-s", "--setup").default_value(true).implicit_value(true).nargs(0);
+#ifdef _DEBUG
+        program.parse_args(argc, argv);
+#else
+        int argc;
+        LPWSTR *argv_w = CommandLineToArgvW(GetCommandLineW(), &argc);
+        if (argv_w == nullptr)
+        {
+            return 1;
+        }
+        std::vector<std::string> argv_strings;
+        std::vector<const char *> argv_char;
+        argv_strings.reserve(argc);
+        argv_char.reserve(argc);
+        for (int i = 0; i < argc; i++)
+        {
+            argv_strings.emplace_back(sw::Utils::ToMultiByteStr(argv_w[i]));
+            argv_char.push_back(argv_strings.back().c_str());
+        }
+        program.parse_args(static_cast<int>(argv_char.size()), argv_char.data());
+        LocalFree(argv_w);
+#endif
+        m_args.url = program.get<std::string>("--url");
+        m_args.version = program.get<std::string>("--version");
+        m_args.name = program.get<std::string>("--name");
+        m_args.setup = program.get<bool>("--setup");
+    }
+    catch (const std::exception &err)
+    {
+        std::cerr << err.what() << std::endl;
+        PLOGE << err.what();
+        return 1;
+    }
 
-    using json = nlohmann::json;
-    json j;
-    j["version"] = ver.str();
-    j["author"] = "hly";
-    auto js = j.dump(4);
-    std::cout << js << std::endl;
+    Home home(m_args);
+    home.Show();
 
     sw::App::MsgLoop();
     PLOGI << "program exit.";

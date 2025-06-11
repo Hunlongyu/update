@@ -18,12 +18,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(plog)
 
 FetchContent_Declare(
-    cpp-semver
-    GIT_REPOSITORY https://github.com/z4kn4fein/cpp-semver.git
-    GIT_TAG v0.4.0
+    semver
+    GIT_REPOSITORY https://github.com/Neargye/semver.git
+    GIT_TAG master
     GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(cpp-semver)
+FetchContent_MakeAvailable(semver)
 
 FetchContent_Declare(
     argparse
@@ -100,4 +100,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     hv_static
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE HV_STATICLIB)
+target_compile_definitions(${PROJECT_NAME} PRIVATE 
+    NOMINMAX
+    HV_STATICLIB
+)
