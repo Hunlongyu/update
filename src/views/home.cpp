@@ -26,6 +26,8 @@ void Home::initUI()
     Text = L"程序更新";
     Width = 600;
     Height = 400;
+    MinWidth = 300;
+    MinHeight = 240;
     MaximizeBox = false;
     StartupLocation = sw::WindowStartupLocation::CenterScreen;
     SetLayout<sw::FillLayout>();

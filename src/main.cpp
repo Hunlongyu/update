@@ -17,6 +17,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLin
     PLOGI << "start program.";
 
     Args m_args;
+#ifdef _DEBUG
+    m_args.version = "0.0.1";
+    m_args.name = "Textify";
+    m_args.url = "https://github.com/Hunlongyu/Textify";
+    m_args.setup = true;
+#endif
+
+#ifndef _DEBUG
     try
     {
         argparse::ArgumentParser program("updater");
@@ -24,9 +32,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLin
         program.add_argument("-u", "--url").required().help("github repo url.");
         program.add_argument("-n", "--name").required().help("current program name.");
         program.add_argument("-s", "--setup").default_value(true).implicit_value(true).nargs(0);
-#ifdef _DEBUG
-        program.parse_args(argc, argv);
-#else
         int argc;
         LPWSTR *argv_w = CommandLineToArgvW(GetCommandLineW(), &argc);
         if (argv_w == nullptr)
@@ -44,7 +49,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLin
         }
         program.parse_args(static_cast<int>(argv_char.size()), argv_char.data());
         LocalFree(argv_w);
-#endif
         m_args.url = program.get<std::string>("--url");
         m_args.version = program.get<std::string>("--version");
         m_args.name = program.get<std::string>("--name");
@@ -56,6 +60,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLin
         PLOGE << err.what();
         return 1;
     }
+#endif
 
     Home home(m_args);
     home.Show();
